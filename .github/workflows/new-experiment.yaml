@@ -55,5 +55,5 @@ jobs:
 
           # add repo access for the team
           for repo in ${ORG_REPOS}; do
-            gh api -X PUT -H "Accept: ${PROJECTS_MIME}" "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/projects/${{ github.repository_owner }}/${repo}" -f permission=push
+            gh api -X PUT -H "Accept: ${PROJECTS_MIME}" "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/repos/${{ github.repository_owner }}/${repo}" -f permission=push
           done
