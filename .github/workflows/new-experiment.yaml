@@ -19,15 +19,12 @@ jobs:
     # comes with: gh cli, jq, ...
 
     env:
+      EXPERIMENT_NAME: "Experiment: ${{ github.event.inputs.name }}"
       # This must be a PAT with org:admin access
       GH_TOKEN: ${{ secrets.GH_ORG_TOKEN }}
       BOT_ACCOUNT: ${{ secrets.BOT_ACCOUNT }}
 
       GH_PAGER: ''  # don't pipe into less
-
-      # required to access preview projects API
-      PROJECTS_MIME: application/vnd.github.inertia-preview+json
-      GITHUB_MIME: application/vnd.github.v3+json
 
     steps:
       - name: Create Org-level Project and Team for Experiment
@@ -35,11 +32,15 @@ jobs:
         # https://docs.github.com/en/rest/reference/teams
         run: |
           set -x
-          EXPERIMENT_NAME="Experiment: ${{ github.event.inputs.name }}"
-          PROJECT_ID=$(gh api -X POST -H "Accept: ${PROJECTS_MIME}" orgs/${{ github.repository_owner }}/projects -f name="${EXPERIMENT_NAME}" -f body='${{ github.event.inputs.description }}' --jq '.id')
+
+          # funcs inspired by: https://github.com/cli/cli/blob/de5c04f721d684dd629ff2a0ba307edc0801a9e0/.github/workflows/releases.yml
+          api() { gh api -H 'Accept: application/vnd.github.v3+json' "$@"; }
+          project-api() { gh api --preview inertia "$@"; }
+
+          PROJECT_ID=$(project-api -X POST orgs/${{ github.repository_owner }}/projects -f name="${EXPERIMENT_NAME}" -f body='${{ github.event.inputs.description }}' --jq '.id')
 
           # make the project publicly visible
-          gh api -X PATCH -H "Accept: ${PROJECTS_MIME}" projects/${PROJECT_ID} -F private=false
+          project-api -X PATCH projects/${PROJECT_ID} -F private=false
 
           ORG_REPOS=$(gh api graphql -F owner='${{ github.repository_owner }}' -f query='
             query($owner: String!, $endCursor: String) {
@@ -53,14 +54,14 @@ jobs:
           ' --paginate --jq '.data.repositoryOwner.repositories.nodes[].name')
 
           # create the team and grab the slug (privacy=closed means "visible")
-          TEAM_SLUG=$(gh api -X POST -H "Accept: ${GITHUB_MIME}" orgs/${{ github.repository_owner }}/teams -f privacy=closed -f name="${EXPERIMENT_NAME}" -f description='${{ github.event.inputs.description }}' --jq '.slug')
+          TEAM_SLUG=$(api -X POST orgs/${{ github.repository_owner }}/teams -f privacy=closed -f name="${EXPERIMENT_NAME}" -f description='${{ github.event.inputs.description }}' --jq '.slug')
 
           # link project to the team
-          gh api -X PUT -H "Accept: ${PROJECTS_MIME}" "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/projects/${PROJECT_ID}" -f permission=write
+          project-api -X PUT "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/projects/${PROJECT_ID}" -f permission=write
 
           # add repo access for the team
           for repo in ${ORG_REPOS}; do
-            gh api -X PUT -H "Accept: ${PROJECTS_MIME}" "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/repos/${{ github.repository_owner }}/${repo}" -f permission=push
+            project-api -X PUT "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/repos/${{ github.repository_owner }}/${repo}" -f permission=push
           done
 
           # remove the bot from the team (it gets added automatically)
