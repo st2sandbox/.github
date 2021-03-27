@@ -2,12 +2,13 @@
 name: New Experiment
 on:
   workflow_dispatch:
-    name:
-      description: Name of the experiment (used in project and team name)
-      required: true
-    description:
-      description: Description of the experiment
-      required: true
+    inputs:
+      name:
+        description: Name of the experiment (used in project and team name)
+        required: true
+      description:
+        description: Description of the experiment
+        required: true
 
 # interesting actions
 # https://github.com/marketplace/actions/github-team-sync
