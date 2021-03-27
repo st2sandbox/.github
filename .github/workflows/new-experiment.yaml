@@ -65,4 +65,4 @@ jobs:
           done
 
           # remove the bot from the team (it gets added automatically)
-          gh api -X DELETE -H "Accept: ${GITHUB_MIME}" "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/memberships/${BOT_ACCOUNT}"
+          gh api -X DELETE -H "Accept: ${GITHUB_MIME}" "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/memberships/${BOT_ACCOUNT}" >/dev/null
