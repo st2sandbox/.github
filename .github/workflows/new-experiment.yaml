@@ -47,8 +47,8 @@ jobs:
             }
           ' --paginate --jq '.data.repositoryOwner.repositories.nodes[].name')
 
-          # create the team and grab the slug
-          TEAM_SLUG=$(gh api -X POST -H "Accept: ${GITHUB_MIME}" orgs/${{ github.repository_owner }}/teams -f name="${EXPERIMENT_NAME}" -f description='${{ github.event.inputs.description }}' --jq '.slug')
+          # create the team and grab the slug (privacy=closed means "visible")
+          TEAM_SLUG=$(gh api -X POST -H "Accept: ${GITHUB_MIME}" orgs/${{ github.repository_owner }}/teams -f privacy=closed -f name="${EXPERIMENT_NAME}" -f description='${{ github.event.inputs.description }}' --jq '.slug')
 
           # link project to the team
           gh api -X PUT -H "Accept: ${PROJECTS_MIME}" "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/projects/${PROJECT_ID}" -f permission=write
