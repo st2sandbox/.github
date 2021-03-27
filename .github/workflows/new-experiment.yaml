@@ -36,6 +36,9 @@ jobs:
           EXPERIMENT_NAME="Experiment: ${{ github.event.inputs.name }}"
           PROJECT_ID=$(gh api -X POST -H "Accept: ${PROJECTS_MIME}" orgs/${{ github.repository_owner }}/projects -f name="${EXPERIMENT_NAME}" -f body='${{ github.event.inputs.description }}' --jq '.id')
 
+          # make the project publicly visible
+          gh api -X PATCH -H "Accept: ${PROJECTS_MIME}" projects/${PROJECT_ID} -f private=false
+
           ORG_REPOS=$(gh api graphql -F owner='${{ github.repository_owner }}' -f query='
             query($owner: String!, $endCursor: String) {
               repositoryOwner(login: $owner) {
