@@ -19,7 +19,9 @@ jobs:
     # comes with: gh cli, jq, ...
 
     env:
+      # This must be a PAT with org:admin access
       GH_TOKEN: ${{ secrets.GH_ORG_TOKEN }}
+      BOT_ACCOUNT: ${{ secrets.BOT_ACCOUNT }}
 
       GH_PAGER: ''  # don't pipe into less
 
@@ -60,3 +62,6 @@ jobs:
           for repo in ${ORG_REPOS}; do
             gh api -X PUT -H "Accept: ${PROJECTS_MIME}" "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/repos/${{ github.repository_owner }}/${repo}" -f permission=push
           done
+
+          # remove the bot from the team (it gets added automatically)
+          gh api -X DELETE -H "Accept: ${GITHUB_MIME}" "orgs/${{ github.repository_owner }}/teams/${TEAM_SLUG}/memberships/${BOT_ACCOUNT}"
